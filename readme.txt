@@ -1,0 +1,56 @@
+=== OptiSnap – Image Optimizer & Watermark ===
+Contributors: optisnap
+Tags: webp, image optimization, watermark, woocommerce, avif
+Requires at least: 5.8
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 3.9.1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+تبدیل خودکار تصاویر به WebP، فشرده‌سازی، کراپ مربعی، سایزهای ریسپانسیو و واترمارک لوگو – سازگار با WooCommerce.
+
+== Description ==
+
+OptiSnap تصاویر کتابخانه رسانه را بهینه می‌کند:
+
+* تبدیل خودکار JPEG/PNG به **WebP** (و AVIF اختیاری) با سه موتور: cwebp / Imagick / GD
+* **Smart Mode**: انتخاب خودکار کیفیت بر اساس جزئیات تصویر و نقش آن در محصول
+* کیفیت و ابعاد جدا برای تصویر اصلی محصول، گالری و سایر تصاویر
+* کراپ مربعی ۱:۱ و سایزهای ریسپانسیو 480/768/1200 برای srcset
+* **واترمارک دستی** لوگو با Backup خودکار، Preview و استثناهای دسته/محصول
+* **Backup اجباری** همه فایل‌های اصلی + بازگردانی کامل
+* پردازش گروهی با صف پایدار (Pause/Resume) و پردازش خودکار پس‌زمینه (WP-Cron)
+* ابزار پاک‌سازی (تصاویر تکراری/بدون والد) و ساخت Alt خودکار
+* REST API سازگار با اپ JLuxe Admin
+
+== Installation ==
+
+1. فایل زیپ را در «افزونه‌ها › افزودن › بارگذاری افزونه» آپلود و فعال کنید.
+2. از منوی OptiSnap › تنظیمات، کیفیت‌ها و لوگوی واترمارک را تنظیم کنید.
+
+== Frequently Asked Questions ==
+
+= آیا فایل‌های اصلی حذف می‌شوند؟ =
+
+خیر. طبق پیش‌فرض همه فایل‌های اصلی به `uploads/osn-backup/` منتقل می‌شوند و هر لحظه قابل بازگردانی هستند.
+
+= روی nginx چه کنم؟ =
+
+`.htaccess` فقط روی Apache کار می‌کند؛ در تنظیمات سرور nginx دسترسی به `/wp-content/uploads/osn-backup/` را مسدود کنید.
+
+== Changelog ==
+
+= 3.9.1 =
+* امنیت: رفع XSS در پنل ادمین، رفع Path Traversal در نمایش Backup، توقف نوشتن debug.log در وب‌روت، محافظت بهتر پوشه Backup (Apache 2.4/IIS/nginx هشدار)
+* رفع باگ: احترام به Optimization Policy در REST، نشت فایل موقت Encode، نوشتن اتمیک (واترمارک/نور)، انباشت پسوند در Force، تشخیص آپلود تازه با post_date_gmt خالی، Race Condition صف پردازش، حذف جدول لاگ در Uninstall
+* کارایی: کش درخواستی تشخیص نقش تصویر/محصول (حذف ده‌ها کوئری اضافه در فرانت)
+* مخزن: افزودن کامل سورس، مستندات، CI و اسکریپت build
+
+= 3.9.0 =
+* مهاجرت برند به OptiSnap (osn) با مهاجرت یک‌باره داده‌ها
+
+== Upgrade Notice ==
+
+= 3.9.1 =
+پیشنهاد اکید: به‌روزرسانی امنیتی و پایداری. بعد از به‌روزرسانی، یک‌بار صفحه «ابزارها › اسکن» را اجرا کنید.
