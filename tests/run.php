@@ -22,7 +22,7 @@ error_reporting( E_ALL );
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'KB_IN_BYTES', 1024 );
 define( 'MB_IN_BYTES', 1024 * 1024 );
-define( 'OSN_IMG_VERSION', '3.9.2' );
+define( 'OSN_IMG_VERSION', '3.11.0' );
 define( 'OSN_IMG_SUFFIX', '-jlx' );
 define( 'OSN_IMG_OPTION', 'osn_img_settings' );
 define( 'OSN_IMG_META_FLAG', '_osn_optimized' );
@@ -300,6 +300,31 @@ ok( count( OSN_Image_Processor::content_replace_pairs( '', $new_u ) ) === 0, 'UR
 // محتوای بدون لینک قدیمی دست‌نخورده می‌ماند
 $safe = '<p>متن بدون لینک</p>';
 ok( OSN_Image_Processor::apply_url_pairs( $safe, $pairs ) === $safe, 'محتوای بدون URL قدیمی تغییر نمی‌کند' );
+
+/* ---------------------------------------------------------------------
+ * 7) دارایی‌های جداشده و قرارداد ترجمه Product Editor (v3.11.0)
+ * ------------------------------------------------------------------- */
+
+echo "\n[7] assets/i18n — فایل‌های مستقل و کلیدهای ترجمه\n";
+$repo_root = dirname( __DIR__ );
+$editor_php = file_get_contents( $repo_root . '/includes/class-product-editor.php' );
+$editor_js  = file_get_contents( $repo_root . '/assets/js/product-editor.js' );
+$editor_css = file_get_contents( $repo_root . '/assets/css/product-editor.css' );
+$pot        = file_get_contents( $repo_root . '/languages/optisnap.pot' );
+ok( false !== $editor_php && false !== $editor_js && false !== $editor_css && false !== $pot, 'فایل‌های JS/CSS/POT موجودند' );
+ok( false !== strpos( $editor_php, 'assets/css/product-editor.css' ) && false !== strpos( $editor_php, 'assets/js/product-editor.js' ) && false === strpos( $editor_php, 'private function inline_js' ) && false === strpos( $editor_php, 'private function inline_css' ), 'Product Editor از assetهای مستقل استفاده می‌کند' );
+preg_match_all( "~osnPE\\.i18n\\.([A-Za-z_$][\\w$]*)~", $editor_js, $used_matches );
+preg_match_all( "~'([A-Za-z_$][\\w$]*)'\\s*=>\\s*__\\(~", $editor_php, $defined_matches );
+$missing_i18n = array_diff( array_unique( $used_matches[1] ), array_unique( $defined_matches[1] ) );
+ok( empty( $missing_i18n ), 'تمام کلیدهای ترجمه JavaScript در PHP تعریف شده‌اند' );
+preg_match_all( "~__\\(\\s*'([^']*)'\\s*,\\s*'optisnap'\\s*\\)~", $editor_php, $translated_matches );
+$missing_pot = array();
+foreach ( array_unique( $translated_matches[1] ) as $translated_string ) {
+	if ( false === strpos( $pot, 'msgid "' . $translated_string . '"' ) ) {
+		$missing_pot[] = $translated_string;
+	}
+}
+ok( empty( $missing_pot ), 'رشته‌های gettext این بخش در فایل POT ثبت شده‌اند' );
 
 /* ---------------------------------------------------------------------
  * نتیجه نهایی

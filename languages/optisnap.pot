@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0-or-later license.
 msgid ""
 msgstr ""
-"Project-Id-Version: OptiSnap 3.10.0\n"
+"Project-Id-Version: OptiSnap 3.11.0\n"
 "Report-Msgid-Bugs-To: https://github.com/hassann98-cmd/optisnap/issues\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -10,5 +10,86 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Domain: optisnap\n"
 
-#. جای نگهداری رشته‌های ترجمه‌پذیر — روش کار در docs/ISSUES.md (بخش D2)
-#. رشته‌های جدید از این پس با __('...', 'optisnap') نوشته می‌شوند.
+#: includes/class-product-editor.php
+msgid "بهینه‌سازی"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "واترمارک"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "واترمارک روی این تصویر اعمال شود؟ (Backup خودکار گرفته می‌شود)"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "انجام شد"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "خطا"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "..."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "استثناء از پردازش خودکار"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بهینه‌سازی: شده"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "کاهش حجم"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بهینه‌سازی: از قبل مناسب بود (رد شد)"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بهینه‌سازی: خطا خورده - نیاز به بررسی"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بهینه‌سازی: هنوز انجام نشده"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "دارد"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "ندارد"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "نور دستی: "
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "تصویر بهینه شد ✅"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "این تصویر قبلاً واترمارک شده است"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "این تصویر رد شد (استثناء یا لوگو تنظیم نشده)"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "واترمارک اعمال شد 💧"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "واترمارک: "
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "خطا: "
+msgstr ""

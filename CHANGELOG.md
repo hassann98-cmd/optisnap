@@ -1,5 +1,25 @@
 # تاریخچه تغییرات – OptiSnap
 
+## [3.11.0] - 2026-10-20
+
+### خلاصه فارسی
+- انتقال CSS و JavaScript دکمه‌های OptiSnap در ویرایشگر محصول به فایل‌های مستقل و نسخه‌دار؛ به‌روزرسانی مرورگر با شماره نسخه افزونه انجام می‌شود.
+- ترجمه‌پذیر شدن رشته‌های اصلی دکمه‌ها، وضعیت‌ها و پیام‌های این بخش با دامنه `optisnap`؛ فایل POT نیز به‌روز شد.
+- افزودن بررسی وجود assetها و تطابق کلیدهای ترجمه JS/PHP به مجموعه تست PHP.
+- اصلاح تعداد گزارش بررسی: ۳۲ یافته شماره‌گذاری‌شده (نه ۲۷). گزارش Issue #1 و سند کامل باید با این تغییر همگام شوند.
+- این مرحله آغاز تفکیک UI و i18n است؛ باقی صفحات و رشته‌ها همچنان در Roadmap نسخه 4.0 قرار دارند.
+
+### Added
+- Product Editor integration now loads versioned external CSS and JavaScript assets instead of embedding both in PHP.
+- Added gettext-backed strings for key Product Editor labels, status titles, and notifications.
+
+### Changed
+- Product Editor assets are cache-busted with the plugin version.
+- Audit accounting corrected: the report enumerates 32 findings (A1–A7, B1–B13, C1–C5, D1–D7), not 27.
+
+### Notes
+- This is the first staged UI/i18n refactor. The remaining inline admin UI assets and broader translation coverage stay on the v4.0 roadmap.
+
 ## [3.10.0] – 2026-10-20
 
 ### ✨ قابلیت جدید (Added)

@@ -4,7 +4,7 @@ Tags: webp, image optimization, watermark, woocommerce, avif
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.10.0
+Stable tag: 3.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,12 @@ OptiSnap تصاویر کتابخانه رسانه را بهینه می‌کند:
 `.htaccess` فقط روی Apache کار می‌کند؛ در تنظیمات سرور nginx دسترسی به `/wp-content/uploads/osn-backup/` را مسدود کنید.
 
 == Changelog ==
+
+= 3.11.0 =
+* Product Editor CSS/JS moved into versioned external assets.
+* Product Editor status and notification strings now use the optisnap text domain.
+* Audit report count corrected to 32 findings; remaining i18n/UI work documented for v4.0.
+
 
 = 3.10.0 =
 * قابلیت بزرگ: به‌روزرسانی خودکار لینک‌های قدیمی در محتوا — بعد از تبدیل photo.jpg به photo-jlx.webp، لینک‌های هاردکدشده در مطالب/محصولات/متاها به URL جدید منتقل می‌شوند (رفع مشکل شناخته‌شده 404 شدن لینک‌ها) + بازگردانی متقارن با Restore
