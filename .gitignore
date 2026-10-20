@@ -1,6 +1,4 @@
 # Git
-# GitHub Actions (فعلاً به دلیل محدودیت scope توکن؛ بعداً به مسیر اصلی منتقل شود)
-/.github/
 .DS_Store
 Thumbs.db
 *.swp

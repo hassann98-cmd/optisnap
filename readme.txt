@@ -4,7 +4,7 @@ Tags: webp, image optimization, watermark, woocommerce, avif
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.9.1
+Stable tag: 3.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,16 @@ OptiSnap تصاویر کتابخانه رسانه را بهینه می‌کند:
 `.htaccess` فقط روی Apache کار می‌کند؛ در تنظیمات سرور nginx دسترسی به `/wp-content/uploads/osn-backup/` را مسدود کنید.
 
 == Changelog ==
+
+= 3.9.2 =
+* امنیت/پایداری: فعال‌سازی CI (بررسی خودکار syntax روی PHP 7.4 تا 8.3 + build)
+* رفع باگ: پشتیبانی کامل EXIF Orientation (حالت‌های Flip: 2/4/5/7 — قبلاً فقط چرخش 3/6/8)
+* رفع باگ: پاک‌سازی خودکار وضعیت «skipped» با تغییر تنظیمات پردازش (تصاویر دوباره ارزیابی می‌شوند)
+* رفع باگ: نام‌گذاری خروجی Force Optimize (photo-1-jlx.webp دیگر به photo-1-jlx-jlx تبدیل نمی‌شود)
+* کارایی: کوئری سبک‌تر شناسه محصولات در حالت products (SQL مستقیم به‌جای WP_Query)
+* کیفیت: تست‌های خودکار (tests/run.php — ۳۱ تست با GD واقعی) + بررسی تطابق نسخه‌ها در build
+
+= 3.9.1 =
 
 = 3.9.1 =
 * امنیت: رفع XSS در پنل ادمین، رفع Path Traversal در نمایش Backup، توقف نوشتن debug.log در وب‌روت، محافظت بهتر پوشه Backup (Apache 2.4/IIS/nginx هشدار)

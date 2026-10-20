@@ -2,7 +2,7 @@
 
 افزونه وردپرس برای تبدیل خودکار تصاویر به **WebP** (و AVIF اختیاری)، فشرده‌سازی، کراپ مربعی ۱:۱، سایزهای ریسپانسیو (srcset)، **واترمارک لوگو** و مدیریت کامل کتابخانه رسانه — سازگار با **WooCommerce** و اپ **JLuxe Admin**.
 
-- نسخه فعلی: **3.9.1**
+- نسخه فعلی: **3.9.2**
 - حداقل PHP: 7.4 (پیشنهاد: 8.1+)
 - پیش‌نیازها: GD با پشتیبانی WebP (یا Imagick) — برای حداکثر فشرده‌سازی: اجرای باینری `cwebp`
 
@@ -60,7 +60,8 @@ optisnap/
 ├── docs/ISSUES.md            # 📋 گزارش کامل مشکلات (Audit)
 ├── CHANGELOG.md              # تاریخچه تغییرات
 ├── bin/build-zip.sh          # ساخت فایل zip نصب
-└── ci/php-lint.yml           # فایل CI (برای فعال‌سازی به .github/workflows/ منتقل شود)
+├── tests/run.php             # تست‌های خودکار (php tests/run.php)
+└── .github/workflows/        # CI: بررسی syntax روی PHP 7.4 تا 8.3 + build
 ```
 
 ## 🔧 توسعه
@@ -71,6 +72,9 @@ cd optisnap
 
 # ساخت zip نصب
 bin/build-zip.sh
+
+# اجرای تست‌ها (نیاز به PHP با GD)
+php tests/run.php
 ```
 
 - **قواعد**: هر تغییر باید در `CHANGELOG.md` ثبت شود؛ commit ها توضیح فارسی/انگلیسی واضح داشته باشند.

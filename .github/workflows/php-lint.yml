@@ -21,6 +21,7 @@ jobs:
         with:
           php-version: '${{ matrix.php }}'
           coverage: none
+          extensions: gd, exif
 
       - name: Lint all PHP files (php -l)
         run: |
@@ -29,6 +30,9 @@ jobs:
             echo "Checking $f"
             php -l "$f"
           done
+
+      - name: Run test suite (tests/run.php)
+        run: php tests/run.php
 
   build-zip:
     runs-on: ubuntu-latest

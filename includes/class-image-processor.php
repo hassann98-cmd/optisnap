@@ -159,11 +159,7 @@ class OSN_Image_Processor {
 		$pathinfo = pathinfo( $file_path );
 		// v3.9.1: جلوگیری از انباشت پسوند هنگام Force Optimize
 		// (قبلاً image-jlx.webp → image-jlx-jlx.webp → image-jlx-jlx-jlx.webp می‌شد)
-		$base = $pathinfo['filename'];
-		if ( false !== strpos( $base, OSN_IMG_SUFFIX ) ) {
-			$base = preg_replace( '/' . preg_quote( OSN_IMG_SUFFIX, '/' ) . '(?:-\d+)?$/', '', $base );
-		}
-		$new_path = $pathinfo['dirname'] . '/' . $base . OSN_IMG_SUFFIX . '.webp';
+		$new_path = $pathinfo['dirname'] . '/' . self::processed_base_name( $file_path ) . OSN_IMG_SUFFIX . '.webp';
 
 		// جلوگیری از تداخل نام
 		$counter = 1;
@@ -1170,6 +1166,18 @@ class OSN_Image_Processor {
 	}
 
 	/**
+	 * نام پایه فایل بدون پسوندهای پردازش قبلی (v3.9.2 - قابل تست)
+	 * photo.jpg → photo | photo-jlx.webp → photo | photo-1-jlx.webp → photo
+	 */
+	public static function processed_base_name( $file_path ) {
+		$base = pathinfo( $file_path, PATHINFO_FILENAME );
+		if ( false !== strpos( $base, OSN_IMG_SUFFIX ) ) {
+			$base = preg_replace( '/(?:-\d+)?' . preg_quote( OSN_IMG_SUFFIX, '/' ) . '$/', '', $base );
+		}
+		return $base;
+	}
+
+	/**
 	 * اصلاح جهت تصویر بر اساس EXIF (عکس‌های دوربین موبایل)
 	 */
 	private static function fix_exif_orientation( $image, $path ) {
@@ -1182,16 +1190,54 @@ class OSN_Image_Processor {
 			return $image;
 		}
 
-		switch ( (int) $exif['Orientation'] ) {
+		return self::apply_exif_transform( $image, (int) $exif['Orientation'] );
+	}
+
+	/**
+	 * اعمال تبدیل نمایش بر اساس Orientation استاندارد EXIF (v3.9.2)
+	 *
+	 * قبلاً فقط حالت‌های 3/6/8 (چرخش) پشتیبانی می‌شد؛ حالت‌های 2/4/5/7 (Flip)
+	 * که در عکس‌های بعضی دوربین‌ها/نرم‌افزارها رایج است هم اضافه شد:
+	 *   2 = Mirror horizontal | 3 = Rotate 180 | 4 = Mirror vertical
+	 *   5 = Mirror horizontal + Rotate 270 CW (Transpose)
+	 *   6 = Rotate 90 CW | 7 = Mirror horizontal + Rotate 90 CW (Transverse)
+	 *   8 = Rotate 270 CW
+	 * نکته: زاویه مثبت در imagerotate یعنی چرخش پادساعت‌گرد (CCW).
+	 */
+	public static function apply_exif_transform( $image, $orientation ) {
+		switch ( $orientation ) {
+			case 2:
+				imageflip( $image, IMG_FLIP_HORIZONTAL );
+				return $image;
+
 			case 3:
 				$rotated = imagerotate( $image, 180, 0 );
 				break;
+
+			case 4:
+				imageflip( $image, IMG_FLIP_VERTICAL );
+				return $image;
+
+			case 5:
+				// Transpose: آینه افقی + چرخش 270 ساعت‌گرد (= 90 CCW)
+				imageflip( $image, IMG_FLIP_HORIZONTAL );
+				$rotated = imagerotate( $image, 90, 0 );
+				break;
+
 			case 6:
 				$rotated = imagerotate( $image, -90, 0 );
 				break;
+
+			case 7:
+				// Transverse: آینه افقی + چرخش 90 ساعت‌گرد (= 90 CW)
+				imageflip( $image, IMG_FLIP_HORIZONTAL );
+				$rotated = imagerotate( $image, -90, 0 );
+				break;
+
 			case 8:
 				$rotated = imagerotate( $image, 90, 0 );
 				break;
+
 			default:
 				return $image;
 		}

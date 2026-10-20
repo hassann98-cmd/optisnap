@@ -68,13 +68,13 @@ class OSN_Batch_Tool {
 
 			case 'products':
 				// تصاویری که به محصولات ووکامرس متصل شده‌اند
-				$parents = get_posts( array(
-					'post_type'      => 'product',
-					'post_status'    => 'any',
-					'posts_per_page' => -1,
-					'fields'         => 'ids',
-				) );
-				$args['post_parent__in'] = ! empty( $parents ) ? $parents : array( 0 );
+				// v3.9.2: کوئری مستقیم SQL فقط شناسه‌ها (قبلاً get_posts با WP_Query
+				// همه محصولات را بارگذاری می‌کرد؛ روی فروشگاه‌های بزرگ حافظه زیادی می‌گرفت)
+				global $wpdb;
+				$parents = $wpdb->get_col(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'product' AND post_status NOT IN ('trash','auto-draft')"
+				);
+				$args['post_parent__in'] = ! empty( $parents ) ? array_map( 'intval', $parents ) : array( 0 );
 				break;
 
 			case 'errors':

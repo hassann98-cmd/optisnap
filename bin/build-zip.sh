@@ -8,6 +8,16 @@ cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
 OUT="$ROOT/optisnap.zip"
 
+# بررسی تطابق نسخه‌ها (B13): header فایل اصلی ↔ OSN_IMG_VERSION ↔ readme.txt
+HDR_VER=$(sed -n 's/^ \* Version:[[:space:]]*//p' optisnap.php | head -1 | tr -d '[:space:]')
+CONST_VER=$(sed -n "s/^define( 'OSN_IMG_VERSION', '\([^']*\)' );/\1/p" optisnap.php | head -1)
+TXT_VER=$(sed -n 's/^Stable tag:[[:space:]]*//p' readme.txt | head -1 | tr -d '[:space:]')
+if [ "$HDR_VER" != "$CONST_VER" ] || [ "$HDR_VER" != "$TXT_VER" ]; then
+  echo "❌ ناسازگاری نسخه: header=$HDR_VER  constant=$CONST_VER  readme.txt=$TXT_VER"
+  exit 1
+fi
+echo "✔ نسخه $HDR_VER (همگام)"
+
 if command -v zip >/dev/null 2>&1 && command -v rsync >/dev/null 2>&1; then
   STAGE="$(mktemp -d)"
   trap 'rm -rf "$STAGE"' EXIT

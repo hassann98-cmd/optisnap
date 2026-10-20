@@ -44,7 +44,8 @@ class OSN_Settings {
 	public function sanitize( $input ) {
 		$defaults = osn_img_default_settings();
 		// شروع از تنظیمات فعلی: ذخیره یک فرم، تنظیمات فرم‌های دیگر را پاک نمی‌کند
-		$clean = osn_img_get_settings();
+		$saved_before = osn_img_get_settings();
+		$clean        = $saved_before;
 		$form  = isset( $input['_form'] ) ? sanitize_key( $input['_form'] ) : 'main';
 
 		// چک‌باکس‌ها فقط در فرم خودشان «خاموش» تفسیر می‌شوند (نبودن در POST یعنی تیک برداشته شده)
@@ -111,7 +112,43 @@ class OSN_Settings {
 		}
 
 		unset( $clean['_form'] );
+
+		// v3.9.2: اگر تنظیمات مؤثر در پردازش تغییر کرده باشد، وضعیت «skipped»
+		// (از قبل بهینه) تصاویر پاک می‌شود تا در اجرای بعدی Batch/Cron دوباره
+		// با تنظیمات جدید ارزیابی شوند (قبلاً برای همیشه رد می‌ماندند).
+		$watch = array(
+			'webp_enabled', 'opt_mode', 'opt_policy', 'avif_enabled', 'quality',
+			'quality_featured', 'quality_gallery', 'max_size', 'max_size_featured',
+			'max_size_gallery', 'size_guard_tolerance', 'heavy_kb',
+		);
+		$changed = false;
+		foreach ( $watch as $key ) {
+			if ( isset( $clean[ $key ] ) && ( ! isset( $saved_before[ $key ] ) || (string) $clean[ $key ] !== (string) $saved_before[ $key ] ) ) {
+				$changed = true;
+				break;
+			}
+		}
+		if ( $changed ) {
+			self::reset_skipped_flags();
+		}
+
 		return $clean;
+	}
+
+	/**
+	 * پاک‌کردن وضعیت «skipped» همه تصاویر (فقط متا؛ فایل‌ها دست‌نخورده‌اند)
+	 */
+	private static function reset_skipped_flags() {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = 'skipped'",
+			OSN_IMG_META_FLAG
+		) );
+		$wpdb->query( $wpdb->prepare(
+			"DELETE FROM {$wpdb->postmeta} WHERE meta_key = %s",
+			'_osn_skip_reason'
+		) );
+		OSN_Logger::log( 'تنظیمات پردازش تغییر کرد؛ وضعیت «skipped» تصاویر برای ارزیابی مجدد پاک شد.' );
 	}
 
 	public function render_page() {
