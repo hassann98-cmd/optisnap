@@ -406,7 +406,8 @@ class OSN_Manager_Page {
 		if ( ! current_user_can( 'manage_options' ) || ! check_ajax_referer( 'osn_batch_nonce', 'nonce', false ) ) {
 			wp_die( 'دسترسی غیرمجاز', 403 );
 		}
-		$id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+		// v3.10.0: از POST/REQUEST خوانده می‌شود تا nonce در URL (لاگ سرور/مرورگر) ثبت نشود
+		$id = isset( $_REQUEST['id'] ) ? absint( $_REQUEST['id'] ) : 0;
 
 		$path = get_post_meta( $id, OSN_IMG_META_ORIGINAL, true );
 		if ( ! $path ) {
@@ -1032,7 +1033,20 @@ class OSN_Manager_Page {
 			// --- Compare ---
 			$(document).on('click', '.osn-compare-btn', function(){
 				var id = $(this).data('id');
-				$('#osn-cmp-before').attr('src', ajaxurl + '?action=osn_view_backup&id=' + id + '&nonce=' + nonce);
+				// v3.10.0: دریافت Backup با POST (دیگر nonce در URL/لاگ‌ها ثبت نمی‌شود)
+				$('#osn-cmp-before').attr('src', '');
+				(function(id){
+					var xhr = new XMLHttpRequest();
+					xhr.open('POST', ajaxurl);
+					xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+					xhr.responseType = 'blob';
+					xhr.onload = function(){
+						if (xhr.status === 200 && xhr.response) {
+							$('#osn-cmp-before').attr('src', URL.createObjectURL(xhr.response));
+						}
+					};
+					xhr.send('action=osn_view_backup&nonce=' + encodeURIComponent(nonce) + '&id=' + encodeURIComponent(id));
+				})(id);
 				$('#osn-cmp-after').attr('src', $(this).data('cur'));
 				$('#osn-compare-modal').fadeIn(150);
 			});

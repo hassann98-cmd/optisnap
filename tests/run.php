@@ -43,6 +43,7 @@ function update_option( $k, $v, $autoload = null ) { return true; }
 function add_option( $k, $v = '' ) { return true; }
 function delete_option( $k ) { return true; }
 function get_attached_file( $id ) { return isset( $GLOBALS['osn_test_logo'] ) ? $GLOBALS['osn_test_logo'] : false; }
+function wp_parse_url( $url, $component = -1 ) { return parse_url( $url, $component ); }
 
 function osn_img_get_settings() {
 	return array(
@@ -272,6 +273,33 @@ $applied = OSN_Watermark::apply( $base2, $settings2, 'other' );
 ok( false === $applied, 'نقش غیرفعال → بدون واترمارک' );
 
 @unlink( $logo_path );
+
+/* ---------------------------------------------------------------------
+ * 6) به‌روزرسانی URLهای محتوا (v3.10.0 - B9)
+ * ------------------------------------------------------------------- */
+
+echo "\n[6] content_replace_pairs / apply_url_pairs — به‌روزرسانی لینک‌های قدیمی\n";
+
+$old_u = 'https://shop.example/wp-content/uploads/2025/01/photo.jpg';
+$new_u = 'https://shop.example/wp-content/uploads/2025/01/photo-jlx.webp';
+$pairs = OSN_Image_Processor::content_replace_pairs( $old_u, $new_u );
+ok( count( $pairs ) === 3, 'سه جفت جایگزینی ساخته شد (کامل/نسبی/بدون اسلش)' );
+ok( $pairs[0][0] === $old_u && $pairs[0][1] === $new_u, 'جفت اول = URL کامل' );
+ok( $pairs[1][0] === '/wp-content/uploads/2025/01/photo.jpg', 'جفت دوم = مسیر نسبی سایت' );
+ok( $pairs[2][0] === 'wp-content/uploads/2025/01/photo.jpg', 'جفت سوم = بدون اسلش اول' );
+
+$content = '<img src="' . $old_u . '"><a href="/wp-content/uploads/2025/01/photo.jpg">دانلود</a> wp-content/uploads/2025/01/photo.jpg';
+$updated = OSN_Image_Processor::apply_url_pairs( $content, $pairs );
+ok( substr_count( $updated, 'photo-jlx.webp' ) === 3, 'هر ۳ حالت در محتوا به‌روزرسانی شد' );
+ok( strpos( $updated, 'photo.jpg' ) === false, 'هیچ لینک قدیمی باقی نماند' );
+
+// URL یکسان / خالی → بدون جفت
+ok( count( OSN_Image_Processor::content_replace_pairs( $old_u, $old_u ) ) === 0, 'URL یکسان → بدون جایگزینی' );
+ok( count( OSN_Image_Processor::content_replace_pairs( '', $new_u ) ) === 0, 'URL خالی → بدون جایگزینی' );
+
+// محتوای بدون لینک قدیمی دست‌نخورده می‌ماند
+$safe = '<p>متن بدون لینک</p>';
+ok( OSN_Image_Processor::apply_url_pairs( $safe, $pairs ) === $safe, 'محتوای بدون URL قدیمی تغییر نمی‌کند' );
 
 /* ---------------------------------------------------------------------
  * نتیجه نهایی

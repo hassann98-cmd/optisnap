@@ -50,7 +50,7 @@ class OSN_Settings {
 
 		// چک‌باکس‌ها فقط در فرم خودشان «خاموش» تفسیر می‌شوند (نبودن در POST یعنی تیک برداشته شده)
 		$checkbox_groups = array(
-			'main'      => array( 'webp_enabled', 'square_crop', 'keep_original', 'debug_log', 'auto_cron', 'avif_enabled', 'responsive_sizes', 'wm_on_featured', 'wm_on_gallery', 'wm_on_other' ),
+			'main'      => array( 'webp_enabled', 'square_crop', 'keep_original', 'update_content_urls', 'debug_log', 'auto_cron', 'avif_enabled', 'responsive_sizes', 'wm_on_featured', 'wm_on_gallery', 'wm_on_other' ),
 			'watermark' => array( 'wm_on_featured', 'wm_on_gallery', 'wm_on_other' ),
 		);
 		if ( isset( $checkbox_groups[ $form ] ) ) {
@@ -274,6 +274,9 @@ class OSN_Settings {
 						<th scope="row">نگه‌داشتن فایل اصلی (Backup)</th>
 						<td>
 							<label><input type="checkbox" name="<?php echo esc_attr( OSN_IMG_OPTION ); ?>[keep_original]" value="1" <?php checked( $s['keep_original'], 1 ); ?>> فایل JPG/PNG اصلی حذف نشود</label>
+							<br>
+							<label style="margin-top:6px;"><input type="checkbox" name="<?php echo esc_attr( OSN_IMG_OPTION ); ?>[update_content_urls]" value="1" <?php checked( ! empty( $s['update_content_urls'] ), 1 ); ?>> <strong>به‌روزرسانی خودکار لینک‌های قدیمی در محتوا</strong> (v3.10.0)</label>
+							<p class="description">بعد از تبدیل <code>photo.jpg</code> به <code>photo-jlx.webp</code>، لینک‌های هاردکدشده این فایل در مطالب/محصولات و متاها به‌صورت خودکار به URL جدید منتقل می‌شوند تا لینک‌های قدیمی 404 نشوند. با بازگردانی (Restore) هم وضعیت لینک‌ها به حالت اول برمی‌گردد.</p>
 							<p class="description">توصیه: روشن بماند. مسیر فایل اصلی در متای تصویر ذخیره می‌شود تا امکان بازگردانی باشد.</p>
 						</td>
 					</tr>
@@ -312,7 +315,7 @@ class OSN_Settings {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row">Opacity - میزان شفافیت (%)</th>
+						<th scope="row">Opacity - میزان شفافیت (هرچه بیشتر، لوگو محوتر) (%)</th>
 						<td>
 							<input type="number" class="osn-live" data-live="opacity" name="<?php echo esc_attr( OSN_IMG_OPTION ); ?>[wm_opacity]" value="<?php echo esc_attr( $s['wm_opacity'] ); ?>" min="0" max="100" style="width:70px;"> <span class="description">پیش‌فرض: 40 → عدد بیشتر = محوتر</span>
 						</td>

@@ -490,6 +490,7 @@ class OSN_Image_Processor {
 		}
 
 		// --- جایگزینی فایل روی همان Attachment ID ---
+		$old_url = wp_get_attachment_url( $attachment_id ); // قبل از تغییر (برای به‌روزرسانی محتوا)
 		update_attached_file( $attachment_id, $new_path );
 		wp_update_post( array(
 			'ID'             => $attachment_id,
@@ -500,6 +501,15 @@ class OSN_Image_Processor {
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 		$meta = wp_generate_attachment_metadata( $attachment_id, $new_path );
 		wp_update_attachment_metadata( $attachment_id, $meta );
+
+		// v3.10.0: به‌روزرسانی لینک‌های قدیمی در محتوا (رفع B9)
+		if ( ! empty( $settings['update_content_urls'] ) && ! empty( $old_url ) ) {
+			$new_url   = wp_get_attachment_url( $attachment_id );
+			$replaced  = self::update_content_urls( $old_url, $new_url );
+			if ( $replaced > 0 ) {
+				OSN_Logger::debug( 'به‌روزرسانی URL در محتوا: ' . $replaced . ' سطر (ID=' . $attachment_id . ')' );
+			}
+		}
 
 		$after    = (int) filesize( $new_path );
 		$duration = round( microtime( true ) - $started, 2 );
@@ -532,6 +542,100 @@ class OSN_Image_Processor {
 		OSN_Logger::db( $attachment_id, $op_label . ' (' . $role . ', ' . $mode_label . ')', $before, $after, 'SUCCESS', '', 'Q' . $used_q );
 
 		return 'done';
+	}
+
+	/* =====================================================================
+	 * به‌روزرسانی URLهای هاردکدشده در محتوا (v3.10.0 - رفع مشکل B9)
+	 * بعد از تبدیل photo.jpg → photo-jlx.webp، لینک‌های قدیمی داخل مطالب/محصولات
+	 * (و متاهای دارای URL) به‌صورت خودکار به URL جدید منتقل می‌شوند.
+	 * =================================================================== */
+
+	/**
+	 * جفت‌های جایگزینی URL (قابل تست - بدون وابستگی به DB)
+	 *
+	 * سه حالت رایج محتوا پوشش داده می‌شود:
+	 *  1) URL کامل:        https://site.com/wp-content/uploads/2025/01/photo.jpg
+	 *  2) نسبی سایت:      /wp-content/uploads/2025/01/photo.jpg
+	 *  3) بدون اسلش اول:  wp-content/uploads/2025/01/photo.jpg
+	 *
+	 * @return array[] لیست [search, replace]
+	 */
+	public static function content_replace_pairs( $old_url, $new_url ) {
+		$old_url = (string) $old_url;
+		$new_url = (string) $new_url;
+		if ( '' === $old_url || '' === $new_url || $old_url === $new_url ) {
+			return array();
+		}
+		$pairs = array( array( $old_url, $new_url ) );
+
+		$strip = function ( $url ) {
+			$u = wp_parse_url( $url, PHP_URL_PATH );
+			return $u ? $u : '';
+		};
+		$old_path = $strip( $old_url );
+		$new_path = $strip( $new_url );
+		if ( $old_path && $new_path && $old_path !== $new_path ) {
+			$pairs[] = array( $old_path, $new_path ); // /wp-content/...
+			$pairs[] = array( ltrim( $old_path, '/' ), ltrim( $new_path, '/' ) ); // wp-content/...
+		}
+		return $pairs;
+	}
+
+	/**
+	 * اعمال جفت‌های جایگزینی روی یک رشته محتوا (قابل تست)
+	 */
+	public static function apply_url_pairs( $content, $pairs ) {
+		foreach ( (array) $pairs as $p ) {
+			if ( ! empty( $p[0] ) && $p[0] !== $p[1] ) {
+				$content = str_replace( $p[0], $p[1], $content );
+			}
+		}
+		return $content;
+	}
+
+	/**
+	 * جایگزینی URL قدیمی → جدید در مطالب (posts.postmeta) سایت
+	 *
+	 * @return int تعداد سطرهای به‌روزرسانی‌شده
+	 */
+	public static function update_content_urls( $old_url, $new_url ) {
+		global $wpdb;
+		$pairs = self::content_replace_pairs( $old_url, $new_url );
+		if ( empty( $pairs ) ) {
+			return 0;
+		}
+
+		$updated = 0;
+		$targets = array(
+			array( $wpdb->posts, 'ID', 'post_content' ),
+			array( $wpdb->postmeta, 'meta_id', 'meta_value' ),
+		);
+
+		foreach ( $targets as $t ) {
+			list( $table, $id_col, $col ) = $t;
+			// فقط سطرهایی که واقعاً شامل URL قدیمی هستند (کوئری ارزان با LIKE)
+			$like  = '%' . $wpdb->esc_like( $pairs[0][0] ) . '%';
+			$found = $wpdb->get_col( $wpdb->prepare(
+				"SELECT {$id_col} FROM {$table} WHERE {$col} LIKE %s LIMIT 500",
+				$like
+			) );
+			foreach ( (array) $found as $rid ) {
+				$row = $wpdb->get_var( $wpdb->prepare(
+					"SELECT {$col} FROM {$table} WHERE {$id_col} = %d",
+					$rid
+				) );
+				$new_val = self::apply_url_pairs( $row, $pairs );
+				if ( $new_val !== $row ) {
+					$wpdb->query( $wpdb->prepare(
+						"UPDATE {$table} SET {$col} = %s WHERE {$id_col} = %d",
+						$new_val,
+						$rid
+					) );
+					$updated++;
+				}
+			}
+		}
+		return $updated;
 	}
 
 	/**
@@ -833,11 +937,18 @@ class OSN_Image_Processor {
 		$info = @getimagesize( $dest );
 		$mime = ( $info && ! empty( $info['mime'] ) ) ? $info['mime'] : 'image/jpeg';
 
+		$restore_old_url = wp_get_attachment_url( $attachment_id ); // URL فایل پردازش‌شده فعلی
 		update_attached_file( $attachment_id, $dest );
 		wp_update_post( array(
 			'ID'             => $attachment_id,
 			'post_mime_type' => $mime,
 		) );
+
+		// v3.10.0: بازگرداندن لینک‌های محتوا به URL اصلی (متقارن با پردازش)
+		$restore_settings = osn_img_get_settings();
+		if ( ! empty( $restore_settings['update_content_urls'] ) && ! empty( $restore_old_url ) ) {
+			self::update_content_urls( $restore_old_url, wp_get_attachment_url( $attachment_id ) );
+		}
 
 		// بازسازی متادیتا و سایزهای Responsive - با گارد تعلیق
 		self::$suspend_auto = true;

@@ -173,10 +173,18 @@ class OSN_Frontend {
 			return new WP_Error( 'osn_not_found', 'تصویر یافت نشد', array( 'status' => 404 ) );
 		}
 
+		// v3.10.0 (A6): تصاویر «استثناءشده» از این اندپوینت عمومی برنمی‌گردند
+		if ( get_post_meta( $id, OSN_IMG_META_EXCLUDED, true ) ) {
+			return new WP_Error( 'osn_not_found', 'تصویر یافت نشد', array( 'status' => 404 ) );
+		}
+
 		$payload = self::payload( $id, $size ? $size : 'full' );
 		if ( ! $payload ) {
 			return new WP_Error( 'osn_not_image', 'این Attachment تصویر نیست', array( 'status' => 400 ) );
 		}
+
+		// v3.10.0: فیلتر برای سفارشی‌سازی/حذف فیلدها توسط توسعه‌دهنده
+		$payload = apply_filters( 'osn_rest_image_payload', $payload, $id );
 
 		return rest_ensure_response( $payload );
 	}
