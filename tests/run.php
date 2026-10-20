@@ -22,7 +22,7 @@ error_reporting( E_ALL );
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'KB_IN_BYTES', 1024 );
 define( 'MB_IN_BYTES', 1024 * 1024 );
-define( 'OSN_IMG_VERSION', '3.12.0' );
+define( 'OSN_IMG_VERSION', '3.13.0' );
 define( 'OSN_IMG_SUFFIX', '-jlx' );
 define( 'OSN_IMG_OPTION', 'osn_img_settings' );
 define( 'OSN_IMG_META_FLAG', '_osn_optimized' );
@@ -341,6 +341,20 @@ $profile = OSN_Image_Processor::attachment_profile_settings( 'high_quality', 80,
 ok( 92 === $profile['quality'] && 1200 === $profile['max_size'] && true === $profile['square_crop'], 'پروفایل کیفیت بالا ابعاد پایه و کراپ عمومی را نگه می‌دارد' );
 $profile = OSN_Image_Processor::attachment_profile_settings( 'unknown', 80, 1200, true );
 ok( 80 === $profile['quality'] && 1200 === $profile['max_size'] && true === $profile['square_crop'] && false === $profile['quality_forced'], 'پروفایل ناشناخته به تنظیمات عمومی برمی‌گردد' );
+
+/* ---------------------------------------------------------------------
+ * 9) ویرایش متن جایگزین تصویر از Product Editor (v3.13.0)
+ * ------------------------------------------------------------------- */
+
+echo "\n[9] product editor alt text — ثبت امن و مستقیم از صفحه محصول\n";
+$editor_php = file_get_contents( $repo_root . '/includes/class-product-editor.php' );
+$editor_js  = file_get_contents( $repo_root . '/assets/js/product-editor.js' );
+ok( false !== strpos( $editor_php, 'wp_ajax_osn_product_save_alt' ) && false !== strpos( $editor_php, 'function ajax_save_alt' ), 'اندپوینت AJAX ذخیره متن جایگزین ثبت شده است' );
+ok( false !== strpos( $editor_php, "'_wp_attachment_image_alt'" ) && false !== strpos( $editor_php, 'sanitize_text_field' ) && false !== strpos( $editor_php, "current_user_can( 'edit_post'," ), 'Alt text با پاک‌سازی ورودی و مجوز ویرایش Attachment ذخیره می‌شود' );
+ok( false !== strpos( $editor_php, "'beforeDims'" ) && false !== strpos( $editor_php, "'afterDims'" ) && false !== strpos( $editor_js, 'function formatBytes' ), 'گزارش وضعیت Product Editor حجم و ابعاد قبل/بعد را نمایش می‌دهد' );
+ok( false !== strpos( $editor_php, "'increaseLabel'" ) && false !== strpos( $editor_js, 'largerOutput' ), 'در صورت بزرگ‌تر شدن خروجی، رابط آن را به‌عنوان افزایش حجم نشان می‌دهد' );
+ok( false !== strpos( $editor_js, "'✅ ' +" ) || false !== strpos( $editor_js, "'✅' +" ), 'نتیجهٔ تصویر بهینه‌شده درصد کاهش را روی نشان تصویر دارد' );
+ok( false !== strpos( $editor_js, 'osn_product_save_alt' ) && false !== strpos( $editor_js, '.osn-pe-alt' ) && false !== strpos( $editor_js, 'aria-modal' ), 'ویرایشگر محصول کنترل Alt درون‌صفحه‌ای و دسترس‌پذیر دارد' );
 
 /* ---------------------------------------------------------------------
  * نتیجه نهایی

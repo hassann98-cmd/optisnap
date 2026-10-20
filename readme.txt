@@ -4,7 +4,7 @@ Tags: webp, image optimization, watermark, woocommerce, avif
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.12.0
+Stable tag: 3.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,12 @@ OptiSnap تصاویر کتابخانه رسانه را بهینه می‌کند:
 `.htaccess` فقط روی Apache کار می‌کند؛ در تنظیمات سرور nginx دسترسی به `/wp-content/uploads/osn-backup/` را مسدود کنید.
 
 == Changelog ==
+
+= 3.13.0 =
+* Add an easy Alt text button for the product featured image and every gallery image, directly in the WooCommerce product editor.
+* Edit existing alt text in a same-page dialog and save it to WordPress's standard attachment alt meta without opening Media Library.
+* Secure AJAX save with nonce, capability checks, and sanitized input.
+* Show optimization savings on product thumbnails, with before/after file size and dimensions in the profile details.
 
 = 3.12.0 =
 * Per-image OptiSnap profiles in the WooCommerce product editor.

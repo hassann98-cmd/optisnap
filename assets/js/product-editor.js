@@ -16,14 +16,28 @@ jQuery(function($){
 		setTimeout(function(){ $t.fadeOut(300, function(){ $t.remove(); }); }, 2500);
 	}
 
+	function formatBytes(bytes){
+		bytes = Number(bytes) || 0;
+		if (bytes < 1024) return bytes + ' B';
+		var units = ['KB', 'MB', 'GB'];
+		var value = bytes / 1024;
+		for (var i = 0; value >= 1024 && i < units.length - 1; i++) value /= 1024;
+		return value.toFixed(value >= 100 ? 0 : 1) + ' ' + units[i];
+	}
+
 	function statusTitle(status){
 		var lines = [];
-		if (status.excluded) { lines.push(osnPE.i18n.excluded); return lines.join(' | '); }
+		if (status.excluded) return osnPE.i18n.excluded;
 		if (status.optimized) {
-			var opt = osnPE.i18n.optimized;
-			if (status.percent !== null && status.percent !== undefined) opt += ' (' + status.percent + '%- ' + osnPE.i18n.reduction + ')';
-			if (status.quality) opt += ' Q' + status.quality;
-			lines.push(opt);
+			if (status.before !== null && status.before !== undefined && status.after !== null && status.after !== undefined) {
+				lines.push(osnPE.i18n.beforeLabel + ': ' + formatBytes(status.before) + ' → ' + osnPE.i18n.afterLabel + ': ' + formatBytes(status.after));
+			}
+			if (status.percent !== null && status.percent !== undefined) {
+				var change = Number(status.percent);
+				lines.push(Math.abs(change) + '% ' + (change < 0 ? osnPE.i18n.increaseLabel : osnPE.i18n.reduction));
+			}
+			if (status.beforeDims && status.afterDims) lines.push(osnPE.i18n.dimensionsLabel + ': ' + status.beforeDims + ' → ' + status.afterDims);
+			if (status.quality) lines.push('Q' + status.quality);
 		} else if (status.skipped) {
 			lines.push(osnPE.i18n.already);
 		} else if (status.error) {
@@ -32,9 +46,7 @@ jQuery(function($){
 			lines.push(osnPE.i18n.notYet);
 		}
 		lines.push(osnPE.i18n.watermarkPrefix + (status.watermarked ? osnPE.i18n.has : osnPE.i18n.notHas));
-		if (status.brightness) {
-			lines.push(osnPE.i18n.manualLight + (status.brightness > 0 ? '+' : '') + status.brightness);
-		}
+		if (status.brightness) lines.push(osnPE.i18n.manualLight + (status.brightness > 0 ? '+' : '') + status.brightness);
 		return lines.join(' | ');
 	}
 
@@ -43,13 +55,18 @@ jQuery(function($){
 		var title = statusTitle(status);
 		if (status.excluded) return '<span class="osn-pe-badge warn" title="' + esc(title) + '">⛔ استثناء</span>';
 		var parts = [];
-		if (status.optimized) parts.push('✅');
+		if (status.optimized) {
+			var hasPercent = status.percent !== null && status.percent !== undefined && status.percent !== '';
+			var percent = Number(status.percent);
+			parts.push('✅' + (hasPercent && isFinite(percent) ? ' ' + (percent >= 0 ? '−' : '+') + Math.abs(percent) + '%' : ''));
+		}
 		else if (status.skipped) parts.push('⏭');
 		else if (status.error) parts.push('❌');
 		if (status.watermarked) parts.push('💧');
 		if (status.brightness) parts.push('🔆');
 		if (!parts.length) return '<span class="osn-pe-badge" title="' + esc(title) + '">—</span>';
-		var cls = status.error ? 'warn' : (status.optimized || status.skipped ? 'ok' : '');
+		var largerOutput = status.optimized && status.percent !== null && status.percent !== undefined && Number(status.percent) < 0;
+		var cls = status.error || largerOutput ? 'warn' : (status.optimized || status.skipped ? 'ok' : '');
 		return '<span class="osn-pe-badge ' + cls + '" title="' + esc(title) + '">' + parts.join(' ') + '</span>';
 	}
 
@@ -75,6 +92,7 @@ jQuery(function($){
 				'<button type="button" class="osn-pe-btn osn-pe-opt" title="' + esc(osnPE.i18n.optimize) + '" data-id="' + id + '">⚡</button>' +
 				'<button type="button" class="osn-pe-btn osn-pe-wm" title="' + esc(osnPE.i18n.watermark) + '" data-id="' + id + '">💧</button>' +
 				'<button type="button" class="osn-pe-btn osn-pe-profile" title="' + esc(osnPE.i18n.profileTitle) + '" data-id="' + id + '">⚙</button>' +
+				'<button type="button" class="osn-pe-btn osn-pe-alt" title="' + esc(osnPE.i18n.altTitle) + '" aria-label="' + esc(osnPE.i18n.altTitle) + '" data-id="' + id + '">T</button>' +
 			'</span>'
 		);
 		return $wrap;
@@ -113,6 +131,7 @@ jQuery(function($){
 				var $wrap = t.$img.closest('.osn-pe-wrap');
 				$wrap.find('.osn-pe-badge').remove();
 				$wrap.find('.osn-pe-profile').data('profile', st.profile || 'default').data('status', st);
+				$wrap.find('.osn-pe-alt').data('alt', st.alt || '');
 				$wrap.append(badgeHtml(st));
 			});
 		});
@@ -147,6 +166,7 @@ jQuery(function($){
 			'<label for="osn-pe-profile-select">' + esc(osnPE.i18n.profileTitle) + '</label>' +
 			'<select id="osn-pe-profile-select">' + options + '</select>' +
 			'<p class="osn-pe-profile-description"></p>' +
+			'<p class="osn-pe-profile-result"></p>' +
 			'<p class="osn-pe-profile-note">' + esc(osnPE.i18n.profileNeedsRestore) + '</p>' +
 			'<div class="osn-pe-modal-actions">' +
 			'<button type="button" class="button osn-pe-profile-cancel">' + esc(osnPE.i18n.profileCancel) + '</button>' +
@@ -162,6 +182,7 @@ jQuery(function($){
 		$modal.data('id', $button.data('id')).data('profile-button', $button).data('status', status);
 		$('#osn-pe-profile-select').val(key);
 		$modal.find('.osn-pe-profile-description').text((osnPE.profileDescriptions || {})[key] || '');
+		$modal.find('.osn-pe-profile-result').text(status.optimized ? statusTitle(status) : '').toggle(!!status.optimized);
 		$modal.find('.osn-pe-profile-note').toggle(!!status.optimized);
 		$modal.fadeIn(120);
 		$('#osn-pe-profile-select').trigger('focus');
@@ -203,6 +224,58 @@ jQuery(function($){
 		})
 		.fail(function(){ toast(osnPE.i18n.errorPrefix + osnPE.i18n.profileFailed, false); })
 		.always(function(){ $('.osn-pe-profile-apply').prop('disabled', false); });
+	});
+
+	function ensureAltModal(){
+		var $modal = $('#osn-pe-alt-modal');
+		if ($modal.length) return $modal;
+		$modal = $('<div id="osn-pe-alt-modal" class="osn-pe-modal" role="dialog" aria-modal="true" aria-labelledby="osn-pe-alt-title">' +
+			'<div class="osn-pe-modal-card osn-pe-alt-card">' +
+			'<h2 id="osn-pe-alt-title">' + esc(osnPE.i18n.altTitle) + '</h2>' +
+			'<label for="osn-pe-alt-input">' + esc(osnPE.i18n.altLabel) + '</label>' +
+			'<textarea id="osn-pe-alt-input" rows="3" placeholder="' + esc(osnPE.i18n.altPlaceholder) + '"></textarea>' +
+			'<p class="osn-pe-alt-help">' + esc(osnPE.i18n.altHelp) + '</p>' +
+			'<div class="osn-pe-modal-actions">' +
+			'<button type="button" class="button osn-pe-alt-cancel">' + esc(osnPE.i18n.altCancel) + '</button>' +
+			'<button type="button" class="button button-primary osn-pe-alt-save">' + esc(osnPE.i18n.altSave) + '</button>' +
+			'</div></div></div>').appendTo('body');
+		return $modal;
+	}
+
+	function openAltModal($button){
+		var $modal = ensureAltModal();
+		$modal.data('id', $button.data('id')).data('alt-button', $button);
+		$('#osn-pe-alt-input').val($button.data('alt') || '');
+		$modal.fadeIn(120);
+		$('#osn-pe-alt-input').trigger('focus').trigger('select');
+	}
+
+	$(document).on('click', '.osn-pe-alt', function(e){
+		e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+		openAltModal($(this));
+	});
+	$(document).on('click', '.osn-pe-alt-cancel, #osn-pe-alt-modal', function(e){
+		if (e.target === this || $(this).hasClass('osn-pe-alt-cancel')) $('#osn-pe-alt-modal').fadeOut(120);
+	});
+	$(document).on('keydown', function(e){
+		if (e.key === 'Escape') $('.osn-pe-modal').fadeOut(120);
+	});
+	$(document).on('click', '.osn-pe-alt-save', function(){
+		var $modal = $('#osn-pe-alt-modal');
+		var $button = $modal.data('alt-button');
+		var id = $modal.data('id');
+		var alt = $('#osn-pe-alt-input').val();
+		var $save = $(this).prop('disabled', true);
+		$.post(osnPE.ajaxurl, {action:'osn_product_save_alt', nonce:osnPE.nonce, id:id, alt:alt})
+		.done(function(res){
+			if (!res.success) { toast(osnPE.i18n.altError, false); return; }
+			var saved = res.data.alt || '';
+			$button.data('alt', saved).closest('.osn-pe-wrap').find('img').attr('alt', saved);
+			$modal.fadeOut(120);
+			toast(osnPE.i18n.altSaved, true);
+		})
+		.fail(function(){ toast(osnPE.i18n.altError, false); })
+		.always(function(){ $save.prop('disabled', false); });
 	});
 
 	// کلیک: بهینه‌سازی

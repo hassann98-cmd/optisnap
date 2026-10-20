@@ -3,7 +3,7 @@
  * Plugin Name: OptiSnap – بهینه‌ساز و واترمارک تصویر
  * Plugin URI:  https://jluxe.ir
  * Description: تبدیل خودکار تصاویر به WebP، کراپ مربعی 1:1، فشرده‌سازی و واترمارک لوگو - سازگار با WooCommerce و اپ JLuxe Admin
- * Version:     3.12.0
+ * Version:     3.13.0
  * Author:      OptiSnap
  * Text Domain: optisnap
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // جلوگیری از اجرای مستقیم فایل
 }
 
-define( 'OSN_IMG_VERSION', '3.12.0' );
+define( 'OSN_IMG_VERSION', '3.13.0' );
 define( 'OSN_IMG_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OSN_IMG_URL', plugin_dir_url( __FILE__ ) );
 define( 'OSN_IMG_OPTION', 'osn_img_settings' );

@@ -18,6 +18,7 @@ class OSN_Product_Editor {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 		add_action( 'wp_ajax_osn_status_batch', array( $this, 'ajax_status_batch' ) );
 		add_action( 'wp_ajax_osn_product_apply_profile', array( $this, 'ajax_apply_profile' ) );
+		add_action( 'wp_ajax_osn_product_save_alt', array( $this, 'ajax_save_alt' ) );
 		add_filter( 'attachment_fields_to_edit', array( $this, 'attachment_profile_field' ), 10, 2 );
 		add_filter( 'attachment_fields_to_save', array( $this, 'save_attachment_profile' ), 10, 2 );
 	}
@@ -56,6 +57,10 @@ class OSN_Product_Editor {
 				'excluded'   => __( 'استثناء از پردازش خودکار', 'optisnap' ),
 				'optimized'  => __( 'بهینه‌سازی: شده', 'optisnap' ),
 				'reduction'  => __( 'کاهش حجم', 'optisnap' ),
+				'beforeLabel' => __( 'قبل', 'optisnap' ),
+				'afterLabel' => __( 'بعد', 'optisnap' ),
+				'increaseLabel' => __( 'افزایش حجم', 'optisnap' ),
+				'dimensionsLabel' => __( 'ابعاد', 'optisnap' ),
 				'already'    => __( 'بهینه‌سازی: از قبل مناسب بود (رد شد)', 'optisnap' ),
 				'failed'     => __( 'بهینه‌سازی: خطا خورده - نیاز به بررسی', 'optisnap' ),
 				'notYet'     => __( 'بهینه‌سازی: هنوز انجام نشده', 'optisnap' ),
@@ -75,6 +80,14 @@ class OSN_Product_Editor {
 				'profileAlready' => __( 'این تصویر با همین پروفایل قبلاً پردازش شده است.', 'optisnap' ),
 				'profileNeedsRestore' => __( 'این تصویر قبلاً پردازش شده است. برای اعمال پروفایل تازه، ابتدا از OptiSnap آن را Restore کن؛ سپس دوباره بهینه‌سازی را اجرا کن.', 'optisnap' ),
 				'profileFailed' => __( 'اجرای پروفایل تصویر ناموفق بود.', 'optisnap' ),
+				'altTitle' => __( 'ویرایش متن جایگزین تصویر', 'optisnap' ),
+				'altLabel' => __( 'متن جایگزین (Alt text)', 'optisnap' ),
+				'altHelp' => __( 'توضیح کوتاه و دقیقِ محتوای تصویر بنویس؛ این متن برای دسترس‌پذیری و جست‌وجو استفاده می‌شود.', 'optisnap' ),
+				'altPlaceholder' => __( 'مثلاً: کفش ورزشی مشکی، نمای جانبی', 'optisnap' ),
+				'altSave' => __( 'ذخیره متن', 'optisnap' ),
+				'altCancel' => __( 'انصراف', 'optisnap' ),
+				'altSaved' => __( 'متن جایگزین ذخیره شد.', 'optisnap' ),
+				'altError' => __( 'ذخیره متن جایگزین ناموفق بود.', 'optisnap' ),
 			),
 			'profiles' => self::profile_labels(),
 			'profileDescriptions' => array(
@@ -108,12 +121,33 @@ class OSN_Product_Editor {
 				'watermarked' => (bool) get_post_meta( $id, OSN_IMG_META_WATERMARKED, true ),
 				'excluded'    => (bool) get_post_meta( $id, OSN_IMG_META_EXCLUDED, true ),
 				'profile'     => get_post_meta( $id, OSN_IMG_META_PROFILE, true ) ?: 'default',
+				'alt'         => (string) get_post_meta( $id, '_wp_attachment_image_alt', true ),
 				'percent'     => ( is_array( $report ) && isset( $report['percent'] ) ) ? (int) $report['percent'] : null,
+				'before'      => ( is_array( $report ) && isset( $report['before'] ) ) ? (int) $report['before'] : null,
+				'after'       => ( is_array( $report ) && isset( $report['after'] ) ) ? (int) $report['after'] : null,
+				'beforeDims'  => ( is_array( $report ) && ! empty( $report['before_dims'] ) ) ? (string) $report['before_dims'] : '',
+				'afterDims'   => ( is_array( $report ) && ! empty( $report['after_dims'] ) ) ? (string) $report['after_dims'] : '',
 				'quality'     => ( is_array( $report ) && ! empty( $report['quality'] ) ) ? $report['quality'] : null,
 				'brightness'  => $brightness,
 			);
 		}
 		wp_send_json_success( $out );
+	}
+
+	/** ذخیرهٔ متن جایگزین تصویر مستقیماً از ویرایش محصول */
+	public function ajax_save_alt() {
+		check_ajax_referer( 'osn_batch_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'دسترسی غیرمجاز', 403 );
+		}
+		$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		if ( ! $id || 'attachment' !== get_post_type( $id ) || ! wp_attachment_is_image( $id ) || ! current_user_can( 'edit_post', $id ) ) {
+			wp_send_json_error( 'شناسه تصویر نامعتبر است یا اجازه ویرایش آن را ندارید.', 400 );
+		}
+		$raw_alt = isset( $_POST['alt'] ) && is_scalar( $_POST['alt'] ) ? (string) wp_unslash( $_POST['alt'] ) : '';
+		$alt     = sanitize_text_field( $raw_alt );
+		update_post_meta( $id, '_wp_attachment_image_alt', $alt );
+		wp_send_json_success( array( 'id' => $id, 'alt' => $alt ) );
 	}
 
 	/** پروفایل‌های عمومی OptiSnap — بدون وابستگی به پوسته یا صفحه‌ساز */
