@@ -18,3 +18,20 @@
 		.osn-pe-badge.ok { background: rgba(0,163,42,.85); }
 		.osn-pe-badge.warn { background: rgba(214,54,56,.85); }
 		#postimagediv .inside, #product_images_container { position: relative; }
+.osn-pe-btn.osn-pe-profile { background:#f0f6fc; }
+.osn-pe-modal {
+	position:fixed; inset:0; z-index:100000; display:none; padding:20px;
+	background:rgba(0,0,0,.55); direction:rtl; text-align:right;
+}
+.osn-pe-modal-card {
+	position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+	width:min(460px, calc(100vw - 32px)); box-sizing:border-box;
+	padding:22px; border-radius:12px; background:#fff; color:#1d2327;
+	box-shadow:0 8px 32px rgba(0,0,0,.25);
+}
+.osn-pe-modal-card h2 { margin:0 0 18px; font-size:18px; }
+.osn-pe-modal-card label { display:block; margin-bottom:6px; font-weight:600; }
+.osn-pe-modal-card select { width:100%; max-width:none; }
+.osn-pe-profile-description,.osn-pe-profile-note { margin:10px 0 0; color:#50575e; line-height:1.7; }
+.osn-pe-profile-note { padding:10px; border-right:3px solid #dba617; background:#fcf9e8; }
+.osn-pe-modal-actions { display:flex; gap:8px; justify-content:flex-start; margin-top:18px; }

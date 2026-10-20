@@ -64,6 +64,7 @@ class OSN_Image_Processor {
 	 */
 	public static function process_file( $file_path, $args = array() ) {
 		$settings = osn_img_get_settings();
+		$role     = isset( $args['role'] ) ? sanitize_key( $args['role'] ) : 'other';
 
 		if ( empty( $settings['webp_enabled'] ) ) {
 			return false;
@@ -117,7 +118,11 @@ class OSN_Image_Processor {
 		}
 
 		// --- کراپ مربعی 1:1 از مرکز ---
-		if ( ! empty( $settings['square_crop'] ) ) {
+		// پروفایل بنر به‌صورت پیش‌فرض نسبت تصویر را حفظ می‌کند؛ override صریح args اولویت دارد.
+		$square_crop = array_key_exists( 'square_crop', $args )
+			? (bool) $args['square_crop']
+			: ( ! in_array( $role, array( 'banner_desktop', 'banner_mobile' ), true ) && ! empty( $settings['square_crop'] ) );
+		if ( $square_crop ) {
 			$image = self::square_crop_center( $image );
 		}
 
@@ -131,7 +136,6 @@ class OSN_Image_Processor {
 		// نسخه ۲: واترمارک به‌صورت پیش‌فرض دستی است (تب OptiSnap Watermark)
 		// مگر اینکه در تنظیمات «واترمارک خودکار هنگام آپلود» روشن باشد
 		// یا صراحتاً در $args خواسته شده باشد.
-		$role = isset( $args['role'] ) ? $args['role'] : 'other';
 
 		// v3.5: واترمارک هرگز خودکار اجرا نمی‌شود - فقط با درخواست صریح ($args['watermark'] === true)
 		// که تنها از مسیر تاییدشده Watermark Manager می‌آید.
@@ -374,6 +378,49 @@ class OSN_Image_Processor {
 	 * @param bool $force اجرای مجدد حتی اگر متای پردازش داشته باشد
 	 * @return string|WP_Error 'done' | 'skipped'
 	 */
+	/**
+	 * تنظیمات پردازش هر Attachment؛ پروفایل‌ها مستقل از هر پوسته/صفحه‌سازند.
+	 *
+	 * @return array کیفیت، حداکثر ضلع، کراپ مربعی و اجبار کیفیت
+	 */
+	public static function attachment_profile_settings( $profile, $base_quality, $base_max_size, $base_square_crop ) {
+		$quality       = max( 10, min( 200, absint( $base_quality ) ) );
+		$max_size      = max( 100, absint( $base_max_size ) );
+		$square_crop   = (bool) $base_square_crop;
+		$quality_forced = false;
+
+		switch ( (string) $profile ) {
+			case 'high_quality':
+				$quality        = 92;
+				$quality_forced = true;
+				break;
+			case 'compact':
+				$quality        = 74;
+				$max_size       = min( $max_size, 1280 );
+				$quality_forced = true;
+				break;
+			case 'banner_desktop':
+				$quality        = 86;
+				$max_size       = 1920;
+				$square_crop    = false;
+				$quality_forced = true;
+				break;
+			case 'banner_mobile':
+				$quality        = 84;
+				$max_size       = 960;
+				$square_crop    = false;
+				$quality_forced = true;
+				break;
+		}
+
+		return array(
+			'quality'        => $quality,
+			'max_size'       => $max_size,
+			'square_crop'    => $square_crop,
+			'quality_forced' => $quality_forced,
+		);
+	}
+
 	public static function process_attachment( $attachment_id, $force = false ) {
 		$attachment_id = absint( $attachment_id );
 
@@ -433,8 +480,13 @@ class OSN_Image_Processor {
 				$max_role = absint( $settings['max_size'] );
 		}
 
-		// --- تشخیص هوشمند «از قبل بهینه» (v3.4) - با حداکثر ابعاد نقش‌محور (v3.6) ---
-		if ( ! $force ) {
+		$profile = get_post_meta( $attachment_id, OSN_IMG_META_PROFILE, true );
+		$profile_settings = self::attachment_profile_settings( $profile, $quality, $max_role, ! empty( $settings['square_crop'] ) );
+		$quality  = $profile_settings['quality'];
+		$max_role = $profile_settings['max_size'];
+
+		// پروفایل دستی تصویر، برخلاف Smart Mode عمومی، نباید با heuristic عادی skip شود.
+		if ( ! $force && empty( $profile_settings['quality_forced'] ) ) {
 			$skip_reason = self::should_auto_skip( $file, $settings, $max_role );
 			if ( $skip_reason ) {
 				update_post_meta( $attachment_id, OSN_IMG_META_FLAG, 'skipped' );
@@ -446,11 +498,13 @@ class OSN_Image_Processor {
 
 		// واترمارک در پردازش انبوه اعمال نمی‌شود (تب جداگانه دارد)
 		$result = self::process_file( $file, array(
-			'quality'   => $quality,
-			'role'      => $role,
-			'max_size'  => $max_role,
-			'watermark' => false,
-			'force'     => $force,
+			'quality'        => $quality,
+			'role'           => $role,
+			'max_size'       => $max_role,
+			'square_crop'    => $profile_settings['square_crop'],
+			'quality_forced' => $profile_settings['quality_forced'],
+			'watermark'      => false,
+			'force'          => $force,
 		) );
 
 		if ( is_wp_error( $result ) ) {

@@ -74,6 +74,7 @@ jQuery(function($){
 			'<span class="osn-pe-toolbar">' +
 				'<button type="button" class="osn-pe-btn osn-pe-opt" title="' + esc(osnPE.i18n.optimize) + '" data-id="' + id + '">⚡</button>' +
 				'<button type="button" class="osn-pe-btn osn-pe-wm" title="' + esc(osnPE.i18n.watermark) + '" data-id="' + id + '">💧</button>' +
+				'<button type="button" class="osn-pe-btn osn-pe-profile" title="' + esc(osnPE.i18n.profileTitle) + '" data-id="' + id + '">⚙</button>' +
 			'</span>'
 		);
 		return $wrap;
@@ -111,6 +112,7 @@ jQuery(function($){
 				var st = res.data[t.id];
 				var $wrap = t.$img.closest('.osn-pe-wrap');
 				$wrap.find('.osn-pe-badge').remove();
+				$wrap.find('.osn-pe-profile').data('profile', st.profile || 'default').data('status', st);
 				$wrap.append(badgeHtml(st));
 			});
 		});
@@ -131,6 +133,77 @@ jQuery(function($){
 		if (galleryEl) mo.observe(galleryEl, { childList:true, subtree:true });
 		if (thumbEl) mo.observe(thumbEl, { childList:true, subtree:true });
 	}
+
+	function ensureProfileModal(){
+		var $modal = $('#osn-pe-profile-modal');
+		if ($modal.length) return $modal;
+		var options = '';
+		Object.keys(osnPE.profiles || {}).forEach(function(key){
+			options += '<option value="' + esc(key) + '">' + esc(osnPE.profiles[key]) + '</option>';
+		});
+		$modal = $('<div id="osn-pe-profile-modal" class="osn-pe-modal" role="dialog" aria-modal="true" aria-labelledby="osn-pe-profile-title">' +
+			'<div class="osn-pe-modal-card">' +
+			'<h2 id="osn-pe-profile-title">' + esc(osnPE.i18n.profileTitle) + '</h2>' +
+			'<label for="osn-pe-profile-select">' + esc(osnPE.i18n.profileTitle) + '</label>' +
+			'<select id="osn-pe-profile-select">' + options + '</select>' +
+			'<p class="osn-pe-profile-description"></p>' +
+			'<p class="osn-pe-profile-note">' + esc(osnPE.i18n.profileNeedsRestore) + '</p>' +
+			'<div class="osn-pe-modal-actions">' +
+			'<button type="button" class="button osn-pe-profile-cancel">' + esc(osnPE.i18n.profileCancel) + '</button>' +
+			'<button type="button" class="button button-primary osn-pe-profile-apply">' + esc(osnPE.i18n.profileApply) + '</button>' +
+			'</div></div></div>').appendTo('body');
+		return $modal;
+	}
+
+	function openProfileModal($button){
+		var $modal = ensureProfileModal();
+		var key = $button.data('profile') || 'default';
+		var status = $button.data('status') || {};
+		$modal.data('id', $button.data('id')).data('profile-button', $button).data('status', status);
+		$('#osn-pe-profile-select').val(key);
+		$modal.find('.osn-pe-profile-description').text((osnPE.profileDescriptions || {})[key] || '');
+		$modal.find('.osn-pe-profile-note').toggle(!!status.optimized);
+		$modal.fadeIn(120);
+		$('#osn-pe-profile-select').trigger('focus');
+	}
+
+	$(document).on('click', '.osn-pe-profile', function(e){
+		e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+		openProfileModal($(this));
+	});
+	$(document).on('change', '#osn-pe-profile-select', function(){
+		var key = $(this).val();
+		$('#osn-pe-profile-modal .osn-pe-profile-description').text((osnPE.profileDescriptions || {})[key] || '');
+	});
+	$(document).on('click', '.osn-pe-profile-cancel, #osn-pe-profile-modal', function(e){
+		if (e.target === this || $(this).hasClass('osn-pe-profile-cancel')) $('#osn-pe-profile-modal').fadeOut(120);
+	});
+	$(document).on('click', '.osn-pe-profile-apply', function(){
+		var $modal = $('#osn-pe-profile-modal');
+		var $button = $modal.data('profile-button');
+		var id = $modal.data('id');
+		var profile = $('#osn-pe-profile-select').val();
+		var status = $modal.data('status') || {};
+		$(this).prop('disabled', true);
+		$.post(osnPE.ajaxurl, {action:'osn_product_apply_profile', nonce:osnPE.nonce, id:id, profile:profile})
+		.done(function(res){
+			if (!res.success) { toast(osnPE.i18n.errorPrefix + (res.data || osnPE.i18n.profileFailed), false); return; }
+			$button.data('profile', res.data.profile || profile);
+			if (res.data.requires_restore) {
+				$modal.fadeOut(120);
+				toast(osnPE.i18n.profileNeedsRestore, false);
+				return;
+			}
+			$modal.fadeOut(120);
+			if (res.data.url) $button.closest('.osn-pe-wrap').find('img').attr('src', res.data.url + '?t=' + Date.now());
+			if (res.data.status === 'done') toast(osnPE.i18n.optimizedToast, true);
+			else if (res.data.status === 'already') toast(osnPE.i18n.profileAlready, true);
+			else toast(osnPE.i18n.profileSaved, true);
+			scan();
+		})
+		.fail(function(){ toast(osnPE.i18n.errorPrefix + osnPE.i18n.profileFailed, false); })
+		.always(function(){ $('.osn-pe-profile-apply').prop('disabled', false); });
+	});
 
 	// کلیک: بهینه‌سازی
 	$(document).on('click', '.osn-pe-opt', function(e){

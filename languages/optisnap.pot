@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0-or-later license.
 msgid ""
 msgstr ""
-"Project-Id-Version: OptiSnap 3.11.0\n"
+"Project-Id-Version: OptiSnap 3.12.0\n"
 "Report-Msgid-Bugs-To: https://github.com/hassann98-cmd/optisnap/issues\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -92,4 +92,80 @@ msgstr ""
 
 #: includes/class-product-editor.php
 msgid "خطا: "
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "پروفایل این تصویر"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "ذخیره و اجرا"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "انصراف"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "پروفایل ذخیره شد."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "این تصویر با همین پروفایل قبلاً پردازش شده است."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "این تصویر قبلاً پردازش شده است. برای اعمال پروفایل تازه، ابتدا از OptiSnap آن را Restore کن؛ سپس دوباره بهینه‌سازی را اجرا کن."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "اجرای پروفایل تصویر ناموفق بود."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "از کیفیت و ابعاد تنظیمات عمومی OptiSnap استفاده می‌کند."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "کیفیت WebP بالاتر؛ حداکثر ابعاد بر اساس نقش تصویر باقی می‌ماند."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "حجم کمتر؛ کیفیت 74 و حداکثر ضلع 1280px."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "کیفیت 86، حداکثر ضلع 1920px؛ نسبت تصویر حفظ می‌شود."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "کیفیت 84، حداکثر ضلع 960px؛ نسبت تصویر حفظ می‌شود."
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "تنظیمات عمومی سایت"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "کیفیت بالاتر"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "حجم کمتر"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بنر دسکتاپ — حداکثر 1920px، بدون کراپ"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "بنر موبایل — حداکثر 960px، بدون کراپ"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "پروفایل OptiSnap"
+msgstr ""
+
+#: includes/class-product-editor.php
+msgid "این تنظیم فقط متعلق به OptiSnap است. بنرها نسبت تصویرشان را حفظ می‌کنند؛ برای تغییر تصویر بهینه‌شده ابتدا Restore کنید."
 msgstr ""

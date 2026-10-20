@@ -4,7 +4,7 @@ Tags: webp, image optimization, watermark, woocommerce, avif
 Requires at least: 5.8
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 3.11.0
+Stable tag: 3.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,13 @@ OptiSnap تصاویر کتابخانه رسانه را بهینه می‌کند:
 `.htaccess` فقط روی Apache کار می‌کند؛ در تنظیمات سرور nginx دسترسی به `/wp-content/uploads/osn-backup/` را مسدود کنید.
 
 == Changelog ==
+
+= 3.12.0 =
+* Per-image OptiSnap profiles in the WooCommerce product editor.
+* General high-quality, compact, desktop-banner, and mobile-banner profiles for Media Library images.
+* Banner profiles preserve aspect ratio and disable square cropping by default.
+* Profile changes never overwrite an already optimized file; restore first, then re-run optimization.
+
 
 = 3.11.0 =
 * Product Editor CSS/JS moved into versioned external assets.

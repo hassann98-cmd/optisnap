@@ -17,6 +17,9 @@ class OSN_Product_Editor {
 	public function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 		add_action( 'wp_ajax_osn_status_batch', array( $this, 'ajax_status_batch' ) );
+		add_action( 'wp_ajax_osn_product_apply_profile', array( $this, 'ajax_apply_profile' ) );
+		add_filter( 'attachment_fields_to_edit', array( $this, 'attachment_profile_field' ), 10, 2 );
+		add_filter( 'attachment_fields_to_save', array( $this, 'save_attachment_profile' ), 10, 2 );
 	}
 
 	public function enqueue( $hook ) {
@@ -65,6 +68,21 @@ class OSN_Product_Editor {
 				'appliedWm'  => __( 'واترمارک اعمال شد 💧', 'optisnap' ),
 				'watermarkPrefix' => __( 'واترمارک: ', 'optisnap' ),
 				'errorPrefix' => __( 'خطا: ', 'optisnap' ),
+				'profileTitle' => __( 'پروفایل این تصویر', 'optisnap' ),
+				'profileApply' => __( 'ذخیره و اجرا', 'optisnap' ),
+				'profileCancel' => __( 'انصراف', 'optisnap' ),
+				'profileSaved' => __( 'پروفایل ذخیره شد.', 'optisnap' ),
+				'profileAlready' => __( 'این تصویر با همین پروفایل قبلاً پردازش شده است.', 'optisnap' ),
+				'profileNeedsRestore' => __( 'این تصویر قبلاً پردازش شده است. برای اعمال پروفایل تازه، ابتدا از OptiSnap آن را Restore کن؛ سپس دوباره بهینه‌سازی را اجرا کن.', 'optisnap' ),
+				'profileFailed' => __( 'اجرای پروفایل تصویر ناموفق بود.', 'optisnap' ),
+			),
+			'profiles' => self::profile_labels(),
+			'profileDescriptions' => array(
+				'default' => __( 'از کیفیت و ابعاد تنظیمات عمومی OptiSnap استفاده می‌کند.', 'optisnap' ),
+				'high_quality' => __( 'کیفیت WebP بالاتر؛ حداکثر ابعاد بر اساس نقش تصویر باقی می‌ماند.', 'optisnap' ),
+				'compact' => __( 'حجم کمتر؛ کیفیت 74 و حداکثر ضلع 1280px.', 'optisnap' ),
+				'banner_desktop' => __( 'کیفیت 86، حداکثر ضلع 1920px؛ نسبت تصویر حفظ می‌شود.', 'optisnap' ),
+				'banner_mobile' => __( 'کیفیت 84، حداکثر ضلع 960px؛ نسبت تصویر حفظ می‌شود.', 'optisnap' ),
 			),
 		) );
 	}
@@ -89,12 +107,121 @@ class OSN_Product_Editor {
 				'error'       => ( 'error' === $flag ),
 				'watermarked' => (bool) get_post_meta( $id, OSN_IMG_META_WATERMARKED, true ),
 				'excluded'    => (bool) get_post_meta( $id, OSN_IMG_META_EXCLUDED, true ),
+				'profile'     => get_post_meta( $id, OSN_IMG_META_PROFILE, true ) ?: 'default',
 				'percent'     => ( is_array( $report ) && isset( $report['percent'] ) ) ? (int) $report['percent'] : null,
 				'quality'     => ( is_array( $report ) && ! empty( $report['quality'] ) ) ? $report['quality'] : null,
 				'brightness'  => $brightness,
 			);
 		}
 		wp_send_json_success( $out );
+	}
+
+	/** پروفایل‌های عمومی OptiSnap — بدون وابستگی به پوسته یا صفحه‌ساز */
+	private static function profile_labels() {
+		return array(
+			'default'        => __( 'تنظیمات عمومی سایت', 'optisnap' ),
+			'high_quality'   => __( 'کیفیت بالاتر', 'optisnap' ),
+			'compact'        => __( 'حجم کمتر', 'optisnap' ),
+			'banner_desktop' => __( 'بنر دسکتاپ — حداکثر 1920px، بدون کراپ', 'optisnap' ),
+			'banner_mobile'  => __( 'بنر موبایل — حداکثر 960px، بدون کراپ', 'optisnap' ),
+		);
+	}
+
+	/** فیلد پروفایل برای هر تصویر در Media Library؛ مستقل از Product Editor */
+	public function attachment_profile_field( $fields, $post ) {
+		if ( ! current_user_can( 'edit_post', $post->ID ) || ! wp_attachment_is_image( $post->ID ) ) {
+			return $fields;
+		}
+		$current = get_post_meta( $post->ID, OSN_IMG_META_PROFILE, true );
+		$current = $current ? $current : 'default';
+		$options = self::profile_labels();
+		$html    = '<select name="attachments[' . absint( $post->ID ) . '][osn_profile]">';
+		foreach ( $options as $value => $label ) {
+			$html .= '<option value="' . esc_attr( $value ) . '"' . selected( $current, $value, false ) . '>' . esc_html( $label ) . '</option>';
+		}
+		$html .= '</select>';
+		$fields['osn_profile'] = array(
+			'label' => __( 'پروفایل OptiSnap', 'optisnap' ),
+			'input' => 'html',
+			'html'  => $html,
+			'helps' => __( 'این تنظیم فقط متعلق به OptiSnap است. بنرها نسبت تصویرشان را حفظ می‌کنند؛ برای تغییر تصویر بهینه‌شده ابتدا Restore کنید.', 'optisnap' ),
+		);
+		return $fields;
+	}
+
+	/** ذخیره امن فیلد پروفایل در فرم استاندارد Attachment وردپرس */
+	public function save_attachment_profile( $post, $attachment ) {
+		$id = isset( $post['ID'] ) ? absint( $post['ID'] ) : 0;
+		if ( ! $id || ! current_user_can( 'edit_post', $id ) || ! isset( $attachment['osn_profile'] ) ) {
+			return $post;
+		}
+		$raw_profile = is_scalar( $attachment['osn_profile'] ) ? (string) wp_unslash( $attachment['osn_profile'] ) : '';
+		$profile = sanitize_key( $raw_profile );
+		if ( ! array_key_exists( $profile, self::profile_labels() ) ) {
+			return $post;
+		}
+		if ( 'default' === $profile ) {
+			delete_post_meta( $id, OSN_IMG_META_PROFILE );
+		} else {
+			update_post_meta( $id, OSN_IMG_META_PROFILE, $profile );
+		}
+		return $post;
+	}
+
+	/** ذخیره/اجرای یک پروفایل از صفحه ویرایش محصول؛ processing تصاویر موجود اجباری نیست */
+	public function ajax_apply_profile() {
+		check_ajax_referer( 'osn_batch_nonce', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'دسترسی غیرمجاز', 403 );
+		}
+		$id      = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$raw_profile = isset( $_POST['profile'] ) && is_scalar( $_POST['profile'] ) ? (string) wp_unslash( $_POST['profile'] ) : 'default';
+		$profile = sanitize_key( $raw_profile );
+		if ( ! $id || 'attachment' !== get_post_type( $id ) || ! wp_attachment_is_image( $id ) || ! array_key_exists( $profile, self::profile_labels() ) ) {
+			wp_send_json_error( 'شناسه تصویر یا پروفایل نامعتبر است.', 400 );
+		}
+
+		$previous = get_post_meta( $id, OSN_IMG_META_PROFILE, true );
+		$flag     = get_post_meta( $id, OSN_IMG_META_FLAG, true );
+		$file     = get_attached_file( $id );
+		$processed = ( '1' === (string) $flag ) || ( $file && OSN_Image_Processor::is_already_processed_file( $file ) );
+		$previous  = $previous ? $previous : 'default';
+
+		if ( $processed && $previous === $profile ) {
+			wp_send_json_success( array(
+				'status'  => 'already',
+				'profile' => $profile,
+				'url'     => wp_get_attachment_image_url( $id, 'medium' ),
+			) );
+		}
+
+		if ( 'default' === $profile ) {
+			delete_post_meta( $id, OSN_IMG_META_PROFILE );
+		} else {
+			update_post_meta( $id, OSN_IMG_META_PROFILE, $profile );
+		}
+
+		// فایل بهینه‌شده را بی‌اجازه overwrite نمی‌کنیم؛ Restore باید از مسیر استاندارد انجام شود.
+		if ( $processed ) {
+			wp_send_json_success( array(
+				'status'          => 'profile_saved',
+				'profile'         => $profile,
+				'requires_restore'=> true,
+				'url'             => wp_get_attachment_image_url( $id, 'medium' ),
+			) );
+		}
+
+		$result = OSN_Image_Processor::process_attachment( $id, true );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( $result->get_error_message() );
+		}
+		$report = get_post_meta( $id, OSN_IMG_META_REPORT, true );
+		wp_send_json_success( array(
+			'status'  => $result,
+			'profile' => $profile,
+			'url'     => wp_get_attachment_image_url( $id, 'medium' ),
+			'report'  => is_array( $report ) ? $report : array(),
+		) );
 	}
 
 }

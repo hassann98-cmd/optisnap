@@ -22,7 +22,7 @@ error_reporting( E_ALL );
 define( 'ABSPATH', __DIR__ . '/' );
 define( 'KB_IN_BYTES', 1024 );
 define( 'MB_IN_BYTES', 1024 * 1024 );
-define( 'OSN_IMG_VERSION', '3.11.0' );
+define( 'OSN_IMG_VERSION', '3.12.0' );
 define( 'OSN_IMG_SUFFIX', '-jlx' );
 define( 'OSN_IMG_OPTION', 'osn_img_settings' );
 define( 'OSN_IMG_META_FLAG', '_osn_optimized' );
@@ -31,6 +31,7 @@ define( 'OSN_IMG_META_WATERMARKED', '_osn_watermarked' );
 define( 'OSN_IMG_META_FILESIZE', '_osn_filesize' );
 define( 'OSN_IMG_META_REPORT', '_osn_report' );
 define( 'OSN_IMG_META_EXCLUDED', '_osn_excluded' );
+define( 'OSN_IMG_META_PROFILE', '_osn_profile' );
 
 function wp_basename( $path ) { return basename( $path ); }
 function absint( $v ) { return abs( (int) $v ); }
@@ -302,7 +303,7 @@ $safe = '<p>متن بدون لینک</p>';
 ok( OSN_Image_Processor::apply_url_pairs( $safe, $pairs ) === $safe, 'محتوای بدون URL قدیمی تغییر نمی‌کند' );
 
 /* ---------------------------------------------------------------------
- * 7) دارایی‌های جداشده و قرارداد ترجمه Product Editor (v3.11.0)
+ * 7) دارایی‌های جداشده و قرارداد ترجمه Product Editor (v3.12.0)
  * ------------------------------------------------------------------- */
 
 echo "\n[7] assets/i18n — فایل‌های مستقل و کلیدهای ترجمه\n";
@@ -325,6 +326,21 @@ foreach ( array_unique( $translated_matches[1] ) as $translated_string ) {
 	}
 }
 ok( empty( $missing_pot ), 'رشته‌های gettext این بخش در فایل POT ثبت شده‌اند' );
+
+/* ---------------------------------------------------------------------
+ * 8) پروفایل‌های جداگانه برای تصویر محصول و بنر (v3.12.0)
+ * ------------------------------------------------------------------- */
+
+echo "\n[8] attachment profiles — کیفیت/ابعاد و حفظ نسبت تصویر\n";
+$profile = OSN_Image_Processor::attachment_profile_settings( 'banner_desktop', 80, 1200, true );
+ok( 86 === $profile['quality'] && 1920 === $profile['max_size'], 'بنر دسکتاپ کیفیت 86 و ضلع حداکثر 1920 می‌گیرد' );
+ok( false === $profile['square_crop'] && true === $profile['quality_forced'], 'پروفایل بنر دسکتاپ کراپ مربعی را خاموش و کیفیت را تثبیت می‌کند' );
+$profile = OSN_Image_Processor::attachment_profile_settings( 'banner_mobile', 80, 1200, true );
+ok( 84 === $profile['quality'] && 960 === $profile['max_size'] && false === $profile['square_crop'], 'بنر موبایل حداکثر 960px و بدون کراپ مربعی است' );
+$profile = OSN_Image_Processor::attachment_profile_settings( 'high_quality', 80, 1200, true );
+ok( 92 === $profile['quality'] && 1200 === $profile['max_size'] && true === $profile['square_crop'], 'پروفایل کیفیت بالا ابعاد پایه و کراپ عمومی را نگه می‌دارد' );
+$profile = OSN_Image_Processor::attachment_profile_settings( 'unknown', 80, 1200, true );
+ok( 80 === $profile['quality'] && 1200 === $profile['max_size'] && true === $profile['square_crop'] && false === $profile['quality_forced'], 'پروفایل ناشناخته به تنظیمات عمومی برمی‌گردد' );
 
 /* ---------------------------------------------------------------------
  * نتیجه نهایی

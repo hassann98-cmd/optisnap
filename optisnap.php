@@ -3,7 +3,7 @@
  * Plugin Name: OptiSnap – بهینه‌ساز و واترمارک تصویر
  * Plugin URI:  https://jluxe.ir
  * Description: تبدیل خودکار تصاویر به WebP، کراپ مربعی 1:1، فشرده‌سازی و واترمارک لوگو - سازگار با WooCommerce و اپ JLuxe Admin
- * Version:     3.11.0
+ * Version:     3.12.0
  * Author:      OptiSnap
  * Text Domain: optisnap
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // جلوگیری از اجرای مستقیم فایل
 }
 
-define( 'OSN_IMG_VERSION', '3.11.0' );
+define( 'OSN_IMG_VERSION', '3.12.0' );
 define( 'OSN_IMG_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OSN_IMG_URL', plugin_dir_url( __FILE__ ) );
 define( 'OSN_IMG_OPTION', 'osn_img_settings' );
@@ -27,7 +27,8 @@ define( 'OSN_IMG_SUFFIX', '-jlx' ); // پسوند فایل‌های پردازش
 define( 'OSN_IMG_META_EXCLUDED', '_osn_excluded' );     // استثناء از پردازش
 define( 'OSN_IMG_META_WATERMARKED', '_osn_watermarked' ); // واترمارک خورده
 define( 'OSN_IMG_META_FILESIZE', '_osn_filesize' );     // حجم فایل (برای مرتب‌سازی)
-define( 'OSN_IMG_META_REPORT', '_osn_report' );         // گزارش قبل/بعد/درصد
+define( 'OSN_IMG_META_REPORT', '_osn_report' );         // گزارش قبل/بعد
+define( 'OSN_IMG_META_PROFILE', '_osn_profile' );       // پروفایل پردازش انتخابی هر Attachment/درصد
 
 require_once OSN_IMG_DIR . 'includes/class-logger.php';
 require_once OSN_IMG_DIR . 'includes/class-watermark.php';
